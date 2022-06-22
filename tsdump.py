@@ -2,15 +2,18 @@ import struct
 
 BLOCK_SIZE = 7
 PACKET_SIZE = 188
+HEADER_SIZE = 4
 BLOCK_SIZE_BYTES = BLOCK_SIZE*PACKET_SIZE+4
+BLOCK_HEADER_SIZE_BYTES = BLOCK_SIZE*HEADER_SIZE+4
 MAX_TS  = 0x7FFFFFF
 
 class tsdump:
-    def __init__(self, fname):
+    def __init__(self, fname, header_only=0):
         self.fname = fname
         self.ts = 0
         self.ts_prev = 0
         self.ts_init = 1
+        self.header_only = header_only
 
     def __enter__(self):
         self.f = open(self.fname, "rb")
@@ -28,7 +31,10 @@ class tsdump:
         return d
 
     def process_block(self, block):
-        packets = [block[i: i+PACKET_SIZE] for i in range(0, BLOCK_SIZE*PACKET_SIZE, PACKET_SIZE)]
+        if(not self.header_only):
+            packets = [block[i: i+PACKET_SIZE] for i in range(0, BLOCK_SIZE*PACKET_SIZE, PACKET_SIZE)]
+        else:
+            packets = [block[i: i+HEADER_SIZE] for i in range(0, BLOCK_SIZE*HEADER_SIZE, HEADER_SIZE)]
         ts_bytes = block[-4:]
         ts = struct.unpack(">I", ts_bytes)[0]&MAX_TS
         if(self.ts_init):
@@ -41,9 +47,14 @@ class tsdump:
 
     def blocks(self):
         while True:
-            data = self.f.read(BLOCK_SIZE_BYTES)
-            if(len(data) != BLOCK_SIZE_BYTES):
-                break
+            if(not self.header_only):
+                data = self.f.read(BLOCK_SIZE_BYTES)
+                if(len(data) != BLOCK_SIZE_BYTES):
+                    break
+            else:
+                data = self.f.read(BLOCK_HEADER_SIZE_BYTES)
+                if(len(data) != BLOCK_HEADER_SIZE_BYTES):
+                    break
             yield self.process_block(data)
     
 def ts_to_us(ts):
