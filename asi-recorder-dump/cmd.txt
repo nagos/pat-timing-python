@@ -1,0 +1,2 @@
+asi-recorder -d 30
+
