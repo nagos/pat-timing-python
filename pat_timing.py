@@ -31,7 +31,7 @@ def main():
     (options, args) = parser.parse_args()
 
     PAT_TS_1 = extract_pat_ts(FILE_1, options.small)
-    PAT_TS_2 = extract_pat_ts(FILE_2, options.small)
+    PAT_TS_2 = extract_pat_ts(FILE_2, True)
     
     pat_count = min(len(PAT_TS_1), len(PAT_TS_2))
 
