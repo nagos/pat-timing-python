@@ -14,15 +14,19 @@ def parse_packet(packet):
     cc = struct.unpack(">B", packet[3:4])[0] & 0x0f
     return pid, cc
 
-def extract_pat_ts(fname, header_only):
-    ret = []
-    with tsdump.tsdump(fname, header_only) as d:
-        for packets, ts in d.blocks():
-            for packet in packets:
-                pid, cc = parse_packet(packet)
-                if(pid==PAT_PID and cc==0):
-                    ret.append(ts)
-    return ret
+def extract_ts_packets(block):
+    for packets, ts in block:
+        for packet in packets:
+            pid, cc = parse_packet(packet)
+            if(pid==PAT_PID and cc==0):
+                yield(ts)
+
+def process(f1, f2, small):
+    TS_1 = tsdump.tsdump(f1, small)
+    TS_2 = tsdump.tsdump(f2, True)
+    it = zip(extract_ts_packets(TS_1.blocks()), extract_ts_packets(TS_2.blocks()))
+    for x in it:
+        yield(tsdump.ts_to_us(x[0] - x[1]))
 
 def main():
     parser = OptionParser()
@@ -30,14 +34,9 @@ def main():
                   help="header only dump")
     (options, args) = parser.parse_args()
 
-    PAT_TS_1 = extract_pat_ts(FILE_1, options.small)
-    PAT_TS_2 = extract_pat_ts(FILE_2, True)
-    
-    pat_count = min(len(PAT_TS_1), len(PAT_TS_2))
-
-    print("PAT timing difference (us):")
-    for i in range(pat_count):
-        print(tsdump.ts_to_us(PAT_TS_1[i] - PAT_TS_2[i]))
+    with open(FILE_1, "rb") as f1, open(FILE_2, "rb") as f2:
+        for i in process(f1, f2, options.small):
+            print(i)
 
 if __name__ == "__main__":
     sys.exit(main())

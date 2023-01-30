@@ -8,20 +8,13 @@ BLOCK_HEADER_SIZE_BYTES = BLOCK_SIZE*HEADER_SIZE+4
 MAX_TS  = 0x7FFFFFF
 
 class tsdump:
-    def __init__(self, fname, header_only=0):
-        self.fname = fname
+    def __init__(self, f, header_only=False):
+        self.f = f
         self.ts = 0
         self.ts_prev = 0
         self.ts_init = 1
         self.header_only = header_only
 
-    def __enter__(self):
-        self.f = open(self.fname, "rb")
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self.f.close()
-    
     def ts_diff(self, ts1, ts2):
         d = ts1 - ts2
         if (d > (MAX_TS+1)/2):
