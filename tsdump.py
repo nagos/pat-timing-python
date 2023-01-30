@@ -7,6 +7,14 @@ BLOCK_SIZE_BYTES = BLOCK_SIZE*PACKET_SIZE+4
 BLOCK_HEADER_SIZE_BYTES = BLOCK_SIZE*HEADER_SIZE+4
 MAX_TS  = 0x7FFFFFF
 
+def ts_diff(ts1, ts2):
+    d = ts1 - ts2
+    if (d > (MAX_TS+1)/2):
+        d -=(MAX_TS+1)
+    if (d < -(MAX_TS+1)/2):
+        d +=(MAX_TS+1)
+    return d
+
 class tsdump:
     def __init__(self, f, header_only=False):
         self.f = f
@@ -14,14 +22,6 @@ class tsdump:
         self.ts_prev = 0
         self.ts_init = 1
         self.header_only = header_only
-
-    def ts_diff(self, ts1, ts2):
-        d = ts1 - ts2
-        if (d > (MAX_TS+1)/2):
-            d -=(MAX_TS+1)
-        if (d < -(MAX_TS+1)/2):
-            d +=(MAX_TS+1)
-        return d
 
     def process_block(self, block):
         if(not self.header_only):
@@ -34,7 +34,7 @@ class tsdump:
             self.ts_prev = ts
             self.ts = ts
             self.ts_init = 0
-        self.ts += self.ts_diff(ts, self.ts_prev)
+        self.ts += ts_diff(ts, self.ts_prev)
         self.ts_prev = ts
         return packets, self.ts
 
