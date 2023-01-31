@@ -21,8 +21,8 @@ def extract_ts_packets(block):
     for packets, ts in block:
         for packet in packets:
             pid, cc = parse_packet(packet)
-            if(pid == PAT_PID and cc == 0):
-                yield(ts)
+            if pid == PAT_PID and cc == 0:
+                yield ts
 
 
 def process(f1, f2, small):
@@ -31,7 +31,7 @@ def process(f1, f2, small):
     it = zip(extract_ts_packets(TS_1.blocks()),
              extract_ts_packets(TS_2.blocks()))
     for x in it:
-        yield(tsdump.ts_to_us(x[0] - x[1]))
+        yield tsdump.ts_to_us(x[0] - x[1])
 
 
 def main():
